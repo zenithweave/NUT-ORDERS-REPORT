@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Order Export</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #202223;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: #6d7175;
+            font-size: 14px;
+        }
+        
+        .form-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #202223;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dfe3e6;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #5c6ac4;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .btn {
+            background: #5c6ac4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background: #4f5db3;
+        }
+        
+        .btn:disabled {
+            background: #dfe3e6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #6d7175;
+        }
+        
+        .btn-secondary:hover {
+            background: #5c6166;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #5c6ac4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fff5f5;
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        
+        .success {
+            background: #f0fff4;
+            border: 1px solid #51cf66;
+            color: #51cf66;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #5c6ac4;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: #6d7175;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Custom Order Export</h1>
+            <p>Export your Shopify orders in WooCommerce CSV format with custom filters</p>
+        </div>
+        
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+        
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="totalOrders">0</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalRevenue">$0</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalItems">0</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+        </div>
+        
+        <div class="form-card">
+            <form id="exportForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate" name="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">End Date</label>
+                        <input type="date" id="endDate" name="endDate" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="status">Order Status</label>
+                    <select id="status" name="status">
+                        <option value="any">Any Status</option>
+                        <option value="open">Open</option>
+                        <option value="closed">Closed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn" id="exportBtn">
+                        Export Orders
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="previewBtn">
+                        Preview Data
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing orders...</p>
+        </div>
+    </div>
+    
+    <script>
+        // API configuration - replace with your Railway URL
+        const API_BASE_URL = window.location.origin;
+        
+        // Set default dates (last 30 days)
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+        
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const successEl = document.getElementById('success');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+            setTimeout(() => {
+                successEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        function setLoading(isLoading) {
+            const loadingEl = document.getElementById('loading');
+            const exportBtn = document.getElementById('exportBtn');
+            const previewBtn = document.getElementById('previewBtn');
+            
+            if (isLoading) {
+                loadingEl.style.display = 'block';
+                exportBtn.disabled = true;
+                previewBtn.disabled = true;
+            } else {
+                loadingEl.style.display = 'none';
+                exportBtn.disabled = false;
+                previewBtn.disabled = false;
+            }
+        }
+        
+        async function exportOrders() {
+            setLoading(true);
+            
+            try {
+                const formData = new FormData(document.getElementById('exportForm'));
+                const data = Object.fromEntries(formData);
+                
+                const response = await fetch(`${API_BASE_URL}/export-orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Export failed');
+                }
+                
+                // Download the CSV file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `orders_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showSuccess('Orders exported successfully!');
+                
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        async function previewData() {
+            setLoading(true);
+            
+            try {
+                const formData = new FormData(document.getElementById('exportForm'));
+                const data = Object.fromEntries(formData);
+                
+                // For preview, we'll make a smaller request
+                const previewData = {
+                    ...data,
+                    limit: 5 // Just get first 5 orders for preview
+                };
+                
+                const response = await fetch(`${API_BASE_URL}/export-orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(previewData)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Preview failed');
+                }
+                
+                // Parse the CSV to show stats
+                const csvText = await response.text();
+                const lines = csvText.split('\n');
+                const orderCount = lines.length - 2; // Subtract header and empty line
+                
+                document.getElementById('totalOrders').textContent = orderCount;
+                document.getElementById('stats').style.display = 'grid';
+                
+                showSuccess(`Preview loaded: ${orderCount} orders found`);
+                
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('exportForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            exportOrders();
+        });
+        
+        document.getElementById('previewBtn').addEventListener('click', previewData);
+        
+        // Check API health on page load
+        fetch(`${API_BASE_URL}/health`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'OK') {
+                    console.log('API is healthy');
+                }
+            })
+            .catch(error => {
+                showError('API connection failed. Please check your server.');
+            });
+    </script>
+</body>
+</html>
