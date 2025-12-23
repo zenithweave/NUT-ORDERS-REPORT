@@ -1,9 +1,1 @@
-﻿{
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "startCommand": "npm start",
-    "healthcheckPath": "/health"
-  }
-}
+﻿{"build":{"builder":"NIXPACKS"},"deploy":{"startCommand":"npm start","healthcheckPath":"/health"}}
