@@ -653,6 +653,15 @@
         }
         
         function getPaymentMethodBadge(order) {
+            // Debug: Log the entire order object to see payment fields
+            console.log('Order payment data:', {
+                payment_gateway_names: order.payment_gateway_names,
+                gateway: order.gateway,
+                processing_method: order.processing_method,
+                financial_status: order.financial_status,
+                order_name: order.name
+            });
+            
             // Try multiple sources for payment method
             let gateway = order.payment_gateway_names?.[0] || 
                          order.gateway || 
@@ -664,13 +673,17 @@
                 gateway = 'Manual Payment';
             }
             
-            if (gateway.toLowerCase().includes('cash')) {
+            // Check for various payment method patterns
+            const gatewayLower = gateway.toLowerCase();
+            
+            if (gatewayLower.includes('cash') || gatewayLower.includes('cod')) {
                 return '<span class="status-badge status-cod">Cash on Delivery</span>';
-            } else if (gateway.toLowerCase().includes('kashier')) {
+            } else if (gatewayLower.includes('kashier')) {
                 return '<span class="status-badge status-paid">Kashier</span>';
-            } else if (gateway.toLowerCase().includes('manual')) {
+            } else if (gatewayLower.includes('manual') || gateway === 'Manual Payment') {
                 return '<span class="status-badge status-pending">Manual Payment</span>';
             } else {
+                // Show the actual gateway name for debugging
                 return `<span class="status-badge status-pending">${gateway}</span>`;
             }
         }
