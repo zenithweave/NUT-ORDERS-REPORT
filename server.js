@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const { createObjectCsvWriter } = require('csv-writer');
 const moment = require('moment');
 const path = require('path');
@@ -14,6 +15,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 const SHOPIFY_SHOP_NAME = process.env.SHOPIFY_SHOP_NAME;
 const SHOPIFY_ADMIN_ACCESS_TOKEN = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
 
+// Verify required environment variables
+if (!SHOPIFY_SHOP_NAME || !SHOPIFY_ADMIN_ACCESS_TOKEN) {
+  console.error('❌ Missing required environment variables');
+  process.exit(1);
+}
+
 // Serve frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -24,21 +31,21 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Helper function to make Shopify API requests
+// Helper function to make Shopify API requests using axios
 async function fetchShopifyData(endpoint) {
-  const url = `https://${SHOPIFY_SHOP_NAME}/admin/api/2023-10/${endpoint}`;
-  const response = await fetch(url, {
-    headers: {
-      'X-Shopify-Access-Token': SHOPIFY_ADMIN_ACCESS_TOKEN,
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Shopify API error: ${response.status} ${response.statusText}`);
+  try {
+    const url = `https://${SHOPIFY_SHOP_NAME}/admin/api/2024-01/${endpoint}`;
+    const response = await axios.get(url, {
+      headers: {
+        'X-Shopify-Access-Token': SHOPIFY_ADMIN_ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Shopify API error:', error.response?.data || error.message);
+    throw error;
   }
-  
-  return response.json();
 }
 
 // Transform Shopify order data to WooCommerce CSV format
