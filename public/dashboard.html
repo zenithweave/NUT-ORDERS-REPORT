@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Payment Report - Zenith Weave</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #202223;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: #6d7175;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .branding {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid #e1e3e5;
+        }
+        
+        .branding-left {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .branding-left strong {
+            color: #5c6ac4;
+            font-size: 16px;
+        }
+        
+        .branding-left span {
+            color: #6d7175;
+            font-size: 14px;
+        }
+        
+        .branding-right {
+            text-align: right;
+            color: #6d7175;
+            font-size: 14px;
+        }
+        
+        .filters {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+        
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #202223;
+            font-size: 14px;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 12px;
+            border: 1px solid #dfe3e6;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #5c6ac4;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #5c6ac4;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #4f5db3;
+        }
+        
+        .btn-success {
+            background: #50b83c;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #47a033;
+        }
+        
+        .btn-secondary {
+            background: #6d7175;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5c6166;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e1e3e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-header h3 {
+            color: #202223;
+            font-size: 16px;
+        }
+        
+        .order-count {
+            color: #6d7175;
+            font-size: 14px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #f8f9fa;
+        }
+        
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #202223;
+            font-size: 13px;
+            border-bottom: 1px solid #e1e3e5;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f2f4;
+            font-size: 13px;
+            color: #202223;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-paid {
+            background: #d4f4dd;
+            color: #108043;
+        }
+        
+        .status-pending {
+            background: #fff4e6;
+            color: #b98900;
+        }
+        
+        .status-cod {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6d7175;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #5c6ac4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fff5f5;
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6d7175;
+        }
+        
+        .empty-state h3 {
+            color: #202223;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Order Payment Report</h1>
+            <p>Comprehensive order report with payment method details and Stripe transaction information.</p>
+            <div class="branding">
+                <div class="branding-left">
+                    <strong>Mostafa Magdy</strong>
+                    <span>ZENITH WEAVE AGENCY</span>
+                </div>
+                <div class="branding-right">
+                    📞 01011400020
+                </div>
+            </div>
+        </div>
+        
+        <div class="filters">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Order Number</label>
+                    <input type="text" id="orderNumber" placeholder="Search by order number">
+                </div>
+                <div class="filter-group">
+                    <label>Payment Method</label>
+                    <select id="paymentMethod">
+                        <option value="">All Methods</option>
+                        <option value="cod">Cash on Delivery</option>
+                        <option value="stripe">Stripe</option>
+                        <option value="manual">Manual Payment</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Date From</label>
+                    <input type="date" id="dateFrom">
+                </div>
+                <div class="filter-group">
+                    <label>Date To</label>
+                    <input type="date" id="dateTo">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="loadOrders()">Apply Filters</button>
+                <button class="btn btn-success" onclick="exportToCSV()">Export to CSV</button>
+                <button class="btn btn-success" onclick="exportToExcel()">Export to Excel</button>
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Orders</h3>
+                <span class="order-count" id="orderCount">0 orders</span>
+            </div>
+            <div id="loadingState" class="loading">
+                <div class="spinner"></div>
+                <p>Loading order data...</p>
+            </div>
+            <div id="tableContent" style="display: none;">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Items</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>No orders found</h3>
+                <p>Try adjusting your filters or date range</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE_URL = window.location.origin;
+        let ordersData = [];
+        
+        // Set default dates (last 30 days)
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+        document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+        document.getElementById('dateFrom').value = thirtyDaysAgo.toISOString().split('T')[0];
+        
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function getPaymentMethodBadge(order) {
+            const gateway = order.payment_gateway_names?.[0] || 'Unknown';
+            if (gateway.toLowerCase().includes('cash')) {
+                return '<span class="status-badge status-cod">Cash on Delivery</span>';
+            } else if (gateway.toLowerCase().includes('stripe')) {
+                return '<span class="status-badge status-paid">Stripe</span>';
+            } else {
+                return `<span class="status-badge status-pending">${gateway}</span>`;
+            }
+        }
+        
+        function getStatusBadge(status) {
+            if (status === 'paid') {
+                return '<span class="status-badge status-paid">Paid</span>';
+            } else if (status === 'pending') {
+                return '<span class="status-badge status-pending">Pending</span>';
+            } else {
+                return `<span class="status-badge">${status}</span>`;
+            }
+        }
+        
+        async function loadOrders() {
+            const loadingEl = document.getElementById('loadingState');
+            const tableEl = document.getElementById('tableContent');
+            const emptyEl = document.getElementById('emptyState');
+            
+            loadingEl.style.display = 'block';
+            tableEl.style.display = 'none';
+            emptyEl.style.display = 'none';
+            
+            try {
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                const orderNumber = document.getElementById('orderNumber').value;
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                
+                const params = new URLSearchParams({
+                    created_at_min: dateFrom ? new Date(dateFrom).toISOString() : '',
+                    created_at_max: dateTo ? new Date(dateTo + 'T23:59:59').toISOString() : '',
+                    status: 'any'
+                });
+                
+                const response = await fetch(`${API_BASE_URL}/api/orders?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch orders');
+                }
+                
+                const data = await response.json();
+                ordersData = data.orders || [];
+                
+                // Filter by order number if specified
+                if (orderNumber) {
+                    ordersData = ordersData.filter(order => 
+                        order.name.toLowerCase().includes(orderNumber.toLowerCase()) ||
+                        order.order_number?.toString().includes(orderNumber)
+                    );
+                }
+                
+                // Filter by payment method if specified
+                if (paymentMethod) {
+                    ordersData = ordersData.filter(order => {
+                        const gateway = order.payment_gateway_names?.[0] || '';
+                        return gateway.toLowerCase().includes(paymentMethod);
+                    });
+                }
+                
+                displayOrders(ordersData);
+                
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showError('Error loading orders: ' + error.message);
+                loadingEl.style.display = 'none';
+                emptyEl.style.display = 'block';
+            }
+        }
+        
+        function displayOrders(orders) {
+            const tbody = document.getElementById('orderTableBody');
+            const loadingEl = document.getElementById('loadingState');
+            const tableEl = document.getElementById('tableContent');
+            const emptyEl = document.getElementById('emptyState');
+            const countEl = document.getElementById('orderCount');
+            
+            loadingEl.style.display = 'none';
+            
+            if (orders.length === 0) {
+                emptyEl.style.display = 'block';
+                tableEl.style.display = 'none';
+                countEl.textContent = '0 orders';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            orders.forEach(order => {
+                const customerName = [
+                    order.customer?.first_name || order.shipping_address?.first_name || '',
+                    order.customer?.last_name || order.shipping_address?.last_name || ''
+                ].filter(Boolean).join(' ') || 'N/A';
+                
+                const email = order.customer?.email || order.email || 'N/A';
+                const phone = order.customer?.phone || order.phone || order.shipping_address?.phone || 'N/A';
+                const itemCount = order.line_items?.length || 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${order.name}</strong></td>
+                    <td>${formatDate(order.created_at)}</td>
+                    <td>${customerName}</td>
+                    <td>${email}</td>
+                    <td>${phone}</td>
+                    <td>${getPaymentMethodBadge(order)}</td>
+                    <td>${getStatusBadge(order.financial_status)}</td>
+                    <td><strong>${order.currency} ${order.total_price}</strong></td>
+                    <td>${itemCount} item${itemCount !== 1 ? 's' : ''}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            tableEl.style.display = 'block';
+            countEl.textContent = `${orders.length} order${orders.length !== 1 ? 's' : ''}`;
+        }
+        
+        async function exportToCSV() {
+            if (ordersData.length === 0) {
+                showError('No orders to export');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/export-orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        startDate: document.getElementById('dateFrom').value,
+                        endDate: document.getElementById('dateTo').value,
+                        status: 'any'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `orders_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+            } catch (error) {
+                showError('Error exporting to CSV: ' + error.message);
+            }
+        }
+        
+        function exportToExcel() {
+            showError('Excel export coming soon - use CSV for now');
+        }
+        
+        // Load orders on page load
+        loadOrders();
+    </script>
+</body>
+</html>

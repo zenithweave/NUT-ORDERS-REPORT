@@ -95,6 +95,32 @@ function transformOrderToWooFormat(order, lineItem) {
   };
 }
 
+// API endpoint for dashboard table view
+app.get('/api/orders', async (req, res) => {
+  try {
+    const { created_at_min, created_at_max, status } = req.query;
+    
+    let queryParams = 'limit=250';
+    if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
+    if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
+    if (status && status !== 'any') queryParams += `&status=${status}`;
+    
+    const data = await fetchShopifyData(`orders.json?${queryParams}`);
+    
+    res.json({
+      success: true,
+      count: data.orders?.length || 0,
+      orders: data.orders || []
+    });
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Export orders endpoint
 app.post('/export-orders', async (req, res) => {
   try {
