@@ -767,8 +767,42 @@
             }
         }
         
-        function exportToExcel() {
-            showError('Excel export coming soon - use CSV for now');
+        async function exportToExcel() {
+            if (ordersData.length === 0) {
+                showError('No orders to export');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/export-orders-excel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        startDate: document.getElementById('dateFrom').value,
+                        endDate: document.getElementById('dateTo').value,
+                        status: 'any'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Excel export failed');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `orders_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+            } catch (error) {
+                showError('Error exporting to Excel: ' + error.message);
+            }
         }
         
         // Load orders on page load

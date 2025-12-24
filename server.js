@@ -4,6 +4,7 @@ const axios = require('axios');
 const { createObjectCsvWriter } = require('csv-writer');
 const moment = require('moment');
 const path = require('path');
+const ExcelJS = require('exceljs');
 require('dotenv').config();
 
 const app = express();
@@ -209,6 +210,139 @@ app.post('/export-orders', async (req, res) => {
     
   } catch (error) {
     console.error('Export error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Export orders to Excel endpoint
+app.post('/export-orders-excel', async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.body;
+    
+    let queryParams = 'limit=250';
+    if (startDate) queryParams += `&created_at_min=${startDate}`;
+    if (endDate) queryParams += `&created_at_max=${endDate}`;
+    if (status) queryParams += `&status=${status}`;
+    
+    const data = await fetchShopifyData(`orders.json?${queryParams}`);
+    const orders = data.orders || [];
+    
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Orders');
+    
+    // Define columns (same order as WOO EXAMPLE.csv)
+    worksheet.columns = [
+      { header: 'Order Number', key: 'orderNumber', width: 15 },
+      { header: 'Order Status', key: 'orderStatus', width: 12 },
+      { header: 'Order Date', key: 'orderDate', width: 18 },
+      { header: 'Customer Note', key: 'customerNote', width: 30 },
+      { header: 'First Name (Billing)', key: 'firstNameBilling', width: 18 },
+      { header: 'Last Name (Billing)', key: 'lastNameBilling', width: 18 },
+      { header: 'Company (Billing)', key: 'companyBilling', width: 20 },
+      { header: 'Address 1&2 (Billing)', key: 'addressBilling', width: 35 },
+      { header: 'City (Billing)', key: 'cityBilling', width: 18 },
+      { header: 'State Code (Billing)', key: 'stateBilling', width: 15 },
+      { header: 'Postcode (Billing)', key: 'postcodeBilling', width: 12 },
+      { header: 'Country Code (Billing)', key: 'countryBilling', width: 15 },
+      { header: 'Email (Shipping)', key: 'emailShipping', width: 25 },
+      { header: 'Paid Date', key: 'paidDate', width: 18 },
+      { header: 'Phone (Shipping)', key: 'phoneShipping', width: 18 },
+      { header: 'Phone (Billing)', key: 'phoneBilling', width: 18 },
+      { header: 'First Name (Shipping)', key: 'firstNameShipping', width: 18 },
+      { header: 'Last Name (Shipping)', key: 'lastNameShipping', width: 18 },
+      { header: 'Address 1&2 (Shipping)', key: 'addressShipping', width: 35 },
+      { header: 'City (Shipping)', key: 'cityShipping', width: 18 },
+      { header: 'State Code (Shipping)', key: 'stateShipping', width: 15 },
+      { header: 'Postcode (Shipping)', key: 'postcodeShipping', width: 12 },
+      { header: 'Country Code (Shipping)', key: 'countryShipping', width: 15 },
+      { header: 'Payment Method Title', key: 'paymentMethod', width: 20 },
+      { header: 'Cart Discount Amount', key: 'cartDiscount', width: 18 },
+      { header: 'Order Subtotal Amount', key: 'subtotal', width: 18 },
+      { header: 'Shipping Method Title', key: 'shippingMethod', width: 20 },
+      { header: 'Order Shipping Amount', key: 'shippingAmount', width: 18 },
+      { header: 'Order Refund Amount', key: 'refundAmount', width: 18 },
+      { header: 'Order Total Amount', key: 'totalAmount', width: 18 },
+      { header: 'Order Total Tax Amount', key: 'taxAmount', width: 18 },
+      { header: 'SKU', key: 'sku', width: 20 },
+      { header: 'Item #', key: 'itemNumber', width: 15 },
+      { header: 'Item Name', key: 'itemName', width: 40 },
+      { header: 'Quantity (- Refund)', key: 'quantity', width: 15 },
+      { header: 'Item Cost', key: 'itemCost', width: 12 },
+      { header: 'Coupon Code', key: 'couponCode', width: 15 },
+      { header: 'Discount Amount', key: 'discountAmount', width: 15 },
+      { header: 'Discount Amount Tax', key: 'discountTax', width: 15 },
+      { header: 'City Code', key: 'cityCode', width: 12 },
+      { header: 'Carrier Code', key: 'carrierCode', width: 12 }
+    ];
+    
+    // Style header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    
+    // Add data rows
+    for (const order of orders) {
+      for (const lineItem of order.line_items) {
+        const rowData = transformOrderToWooFormat(order, lineItem);
+        worksheet.addRow({
+          orderNumber: rowData['Order Number'],
+          orderStatus: rowData['Order Status'],
+          orderDate: rowData['Order Date'],
+          customerNote: rowData['Customer Note'],
+          firstNameBilling: rowData['First Name (Billing)'],
+          lastNameBilling: rowData['Last Name (Billing)'],
+          companyBilling: rowData['Company (Billing)'],
+          addressBilling: rowData['Address 1&2 (Billing)'],
+          cityBilling: rowData['City (Billing)'],
+          stateBilling: rowData['State Code (Billing)'],
+          postcodeBilling: rowData['Postcode (Billing)'],
+          countryBilling: rowData['Country Code (Billing)'],
+          emailShipping: rowData['Email (Shipping)'],
+          paidDate: rowData['Paid Date'],
+          phoneShipping: rowData['Phone (Shipping)'],
+          phoneBilling: rowData['Phone (Billing)'],
+          firstNameShipping: rowData['First Name (Shipping)'],
+          lastNameShipping: rowData['Last Name (Shipping)'],
+          addressShipping: rowData['Address 1&2 (Shipping)'],
+          cityShipping: rowData['City (Shipping)'],
+          stateShipping: rowData['State Code (Shipping)'],
+          postcodeShipping: rowData['Postcode (Shipping)'],
+          countryShipping: rowData['Country Code (Shipping)'],
+          paymentMethod: rowData['Payment Method Title'],
+          cartDiscount: rowData['Cart Discount Amount'],
+          subtotal: rowData['Order Subtotal Amount'],
+          shippingMethod: rowData['Shipping Method Title'],
+          shippingAmount: rowData['Order Shipping Amount'],
+          refundAmount: rowData['Order Refund Amount'],
+          totalAmount: rowData['Order Total Amount'],
+          taxAmount: rowData['Order Total Tax Amount'],
+          sku: rowData['SKU'],
+          itemNumber: rowData['Item #'],
+          itemName: rowData['Item Name'],
+          quantity: rowData['Quantity (- Refund)'],
+          itemCost: rowData['Item Cost'],
+          couponCode: rowData['Coupon Code'],
+          discountAmount: rowData['Discount Amount'],
+          discountTax: rowData['Discount Amount Tax'],
+          cityCode: rowData['City Code'],
+          carrierCode: rowData['Carrier Code']
+        });
+      }
+    }
+    
+    // Generate Excel file
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="orders_export.xlsx"');
+    res.send(buffer);
+    
+  } catch (error) {
+    console.error('Excel export error:', error);
     res.status(500).json({ error: error.message });
   }
 });
