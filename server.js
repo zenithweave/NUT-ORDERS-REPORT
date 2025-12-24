@@ -106,10 +106,9 @@ app.get('/api/orders', async (req, res) => {
   try {
     const { created_at_min, created_at_max, status } = req.query;
     
-    let queryParams = 'limit=250';
+    let queryParams = 'limit=250&status=any&financial_status=any';
     if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
     if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
-    if (status && status !== 'any') queryParams += `&status=${status}`;
     
     const data = await fetchShopifyData(`orders.json?${queryParams}`);
     
