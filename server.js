@@ -22,8 +22,13 @@ if (!SHOPIFY_SHOP_NAME || !SHOPIFY_ADMIN_ACCESS_TOKEN) {
   process.exit(1);
 }
 
-// Serve frontend
+// Serve dashboard as main page
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+// Keep simple export tool accessible
+app.get('/simple', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
