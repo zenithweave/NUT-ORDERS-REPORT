@@ -147,6 +147,8 @@ app.post('/export-orders', async (req, res) => {
     
     const csvWriter = createObjectCsvWriter({
       path: 'orders_export.csv',
+      encoding: 'utf8',
+      append: false,
       header: [
         {id: 'Order Number', title: 'Order Number'},
         {id: 'Order Status', title: 'Order Status'},
@@ -195,9 +197,13 @@ app.post('/export-orders', async (req, res) => {
     await csvWriter.writeRecords(csvData);
     
     const fs = require('fs');
-    const csvContent = fs.readFileSync('orders_export.csv');
+    let csvContent = fs.readFileSync('orders_export.csv', 'utf8');
     
-    res.setHeader('Content-Type', 'text/csv');
+    // Add UTF-8 BOM for Excel to properly display Arabic characters
+    const BOM = '\uFEFF';
+    csvContent = BOM + csvContent;
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="orders_export.csv"');
     res.send(csvContent);
     
