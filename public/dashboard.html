@@ -277,6 +277,105 @@
             color: #202223;
             margin-bottom: 8px;
         }
+        
+        tbody tr {
+            cursor: pointer;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e1e3e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            color: #202223;
+            font-size: 20px;
+        }
+        
+        .close {
+            color: #6d7175;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #202223;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .detail-section {
+            margin-bottom: 24px;
+        }
+        
+        .detail-section h3 {
+            color: #202223;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e1e3e5;
+        }
+        
+        .detail-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f2f4;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #6d7175;
+        }
+        
+        .detail-value {
+            color: #202223;
+        }
+        
+        .items-table {
+            width: 100%;
+            margin-top: 12px;
+        }
+        
+        .items-table th {
+            background: #f8f9fa;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        
+        .items-table td {
+            padding: 8px;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -361,6 +460,19 @@
             <div id="emptyState" class="empty-state" style="display: none;">
                 <h3>No orders found</h3>
                 <p>Try adjusting your filters or date range</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Order Details Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalOrderNumber">Order Details</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Order details will be inserted here -->
             </div>
         </div>
     </div>
@@ -471,6 +583,104 @@
             }
         }
         
+        function showOrderDetails(order) {
+            const modal = document.getElementById('orderModal');
+            const modalBody = document.getElementById('modalBody');
+            const modalTitle = document.getElementById('modalOrderNumber');
+            
+            modalTitle.textContent = `Order ${order.name}`;
+            
+            const customerName = [
+                order.customer?.first_name || order.shipping_address?.first_name || '',
+                order.customer?.last_name || order.shipping_address?.last_name || ''
+            ].filter(Boolean).join(' ') || 'N/A';
+            
+            const shippingAddress = order.shipping_address ? [
+                order.shipping_address.address1,
+                order.shipping_address.address2,
+                order.shipping_address.city,
+                order.shipping_address.province,
+                order.shipping_address.zip,
+                order.shipping_address.country
+            ].filter(Boolean).join(', ') : 'N/A';
+            
+            const billingAddress = order.billing_address ? [
+                order.billing_address.address1,
+                order.billing_address.address2,
+                order.billing_address.city,
+                order.billing_address.province,
+                order.billing_address.zip,
+                order.billing_address.country
+            ].filter(Boolean).join(', ') : 'N/A';
+            
+            let itemsHTML = '<table class="items-table"><thead><tr><th>Product</th><th>SKU</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>';
+            order.line_items?.forEach(item => {
+                itemsHTML += `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.sku || 'N/A'}</td>
+                    <td>${item.quantity}</td>
+                    <td>${order.currency} ${item.price}</td>
+                    <td>${order.currency} ${(parseFloat(item.price) * item.quantity).toFixed(2)}</td>
+                </tr>`;
+            });
+            itemsHTML += '</tbody></table>';
+            
+            modalBody.innerHTML = `
+                <div class="detail-section">
+                    <h3>Order Information</h3>
+                    <div class="detail-row"><div class="detail-label">Order Number:</div><div class="detail-value">${order.name}</div></div>
+                    <div class="detail-row"><div class="detail-label">Order Date:</div><div class="detail-value">${formatDate(order.created_at)}</div></div>
+                    <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value">${getStatusBadge(order.financial_status)}</div></div>
+                    <div class="detail-row"><div class="detail-label">Payment Method:</div><div class="detail-value">${getPaymentMethodBadge(order)}</div></div>
+                    <div class="detail-row"><div class="detail-label">Customer Note:</div><div class="detail-value">${order.note || 'N/A'}</div></div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>Customer Information</h3>
+                    <div class="detail-row"><div class="detail-label">Name:</div><div class="detail-value">${customerName}</div></div>
+                    <div class="detail-row"><div class="detail-label">Email:</div><div class="detail-value">${order.customer?.email || order.email || 'N/A'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${order.customer?.phone || order.phone || 'N/A'}</div></div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>Shipping Address</h3>
+                    <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${shippingAddress}</div></div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>Billing Address</h3>
+                    <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${billingAddress}</div></div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>Order Items</h3>
+                    ${itemsHTML}
+                </div>
+                
+                <div class="detail-section">
+                    <h3>Order Totals</h3>
+                    <div class="detail-row"><div class="detail-label">Subtotal:</div><div class="detail-value">${order.currency} ${order.subtotal_price}</div></div>
+                    <div class="detail-row"><div class="detail-label">Shipping:</div><div class="detail-value">${order.currency} ${order.total_shipping_price_set?.shop_money?.amount || order.total_shipping_price || '0.00'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Tax:</div><div class="detail-value">${order.currency} ${order.total_tax}</div></div>
+                    <div class="detail-row"><div class="detail-label">Discounts:</div><div class="detail-value">${order.currency} ${order.total_discounts}</div></div>
+                    <div class="detail-row"><div class="detail-label"><strong>Total:</strong></div><div class="detail-value"><strong>${order.currency} ${order.total_price}</strong></div></div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
         function displayOrders(orders) {
             const tbody = document.getElementById('orderTableBody');
             const loadingEl = document.getElementById('loadingState');
@@ -500,6 +710,7 @@
                 const itemCount = order.line_items?.length || 0;
                 
                 const row = document.createElement('tr');
+                row.onclick = () => showOrderDetails(order);
                 row.innerHTML = `
                     <td><strong>${order.name}</strong></td>
                     <td>${formatDate(order.created_at)}</td>
