@@ -196,6 +196,14 @@
             border-radius: 6px;
             border: 1px solid #30363d;
             margin-bottom: 24px;
+            position: relative;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.1);
+            animation: cardPulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes cardPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(88, 166, 255, 0.1); }
+            50% { box-shadow: 0 0 30px rgba(88, 166, 255, 0.2), 0 0 40px rgba(139, 92, 246, 0.1); }
         }
         
         .filter-row {
@@ -225,6 +233,7 @@
             font-size: 14px;
             background: #0d1117;
             color: #c9d1d9;
+            transition: all 0.3s ease;
         }
         
         .filter-group input:focus,
@@ -232,6 +241,8 @@
             outline: none;
             border-color: #58a6ff;
             background: #161b22;
+            box-shadow: 0 0 15px rgba(88, 166, 255, 0.3);
+            transform: translateY(-2px);
         }
         
         .filter-actions {
@@ -253,22 +264,68 @@
             background: #238636;
             color: white;
             border: 1px solid #2ea043;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
         }
         
         .btn-primary:hover {
             background: #2ea043;
             border-color: #3fb950;
+            box-shadow: 0 0 20px rgba(46, 160, 67, 0.5);
+            transform: translateY(-2px);
         }
         
         .btn-success {
             background: #1f6feb;
             color: white;
             border: 1px solid #388bfd;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-success:hover::before {
+            width: 300px;
+            height: 300px;
         }
         
         .btn-success:hover {
             background: #388bfd;
             border-color: #58a6ff;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.5);
+            transform: translateY(-2px);
         }
         
         .btn-secondary {
@@ -287,6 +344,14 @@
             border-radius: 6px;
             border: 1px solid #30363d;
             overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 30px rgba(88, 166, 255, 0.15);
+            animation: tableGlow 5s ease-in-out infinite;
+        }
+        
+        @keyframes tableGlow {
+            0%, 100% { box-shadow: 0 0 30px rgba(88, 166, 255, 0.15); }
+            50% { box-shadow: 0 0 40px rgba(88, 166, 255, 0.25), 0 0 60px rgba(139, 92, 246, 0.15); }
         }
         
         .table-header {
@@ -341,8 +406,14 @@
             color: #c9d1d9;
         }
         
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+        
         tbody tr:hover {
             background: #0d1117;
+            box-shadow: inset 0 0 20px rgba(88, 166, 255, 0.1);
+            transform: scale(1.01);
         }
         
         .status-badge {
@@ -438,6 +509,13 @@
             max-width: 800px;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: 0 0 50px rgba(88, 166, 255, 0.3), 0 0 100px rgba(139, 92, 246, 0.2);
+            animation: modalAppear 0.3s ease-out;
+        }
+        
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
         
         .modal-header {
@@ -525,7 +603,7 @@
     <div class="container">
         <div class="header">
             <h1>Order Payment Report</h1>
-            <p>Comprehensive order report with payment method details and Stripe transaction information.</p>
+            <p>Comprehensive order report with advanced payment tracking and real-time analytics.</p>
             <div class="branding">
                 <div class="branding-left">
                     <div class="branding-avatar">MM</div>
