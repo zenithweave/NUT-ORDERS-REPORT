@@ -405,7 +405,7 @@
                     <select id="paymentMethod">
                         <option value="">All Methods</option>
                         <option value="cod">Cash on Delivery</option>
-                        <option value="stripe">Stripe</option>
+                        <option value="kashier">Kashier</option>
                         <option value="manual">Manual Payment</option>
                     </select>
                 </div>
@@ -510,8 +510,8 @@
             const gateway = order.payment_gateway_names?.[0] || 'Unknown';
             if (gateway.toLowerCase().includes('cash')) {
                 return '<span class="status-badge status-cod">Cash on Delivery</span>';
-            } else if (gateway.toLowerCase().includes('stripe')) {
-                return '<span class="status-badge status-paid">Stripe</span>';
+            } else if (gateway.toLowerCase().includes('kashier')) {
+                return '<span class="status-badge status-paid">Kashier</span>';
             } else {
                 return `<span class="status-badge status-pending">${gateway}</span>`;
             }
