@@ -56,10 +56,14 @@ async function fetchShopifyData(endpoint) {
 
 // Transform Shopify order data to WooCommerce CSV format
 function transformOrderToWooFormat(order, lineItem) {
+  const orderNumber = (order.name || order.id).toString().replace('#', '');
+  const orderDate = moment(order.created_at).format('YYYY-MM-DDHH:mm');
+  const paidDate = order.processed_at ? moment(order.processed_at).format('YYYY-MM-DDHH:mm') : '';
+  
   return {
-    "Order Number": order.name || order.id,
+    "Order Number": orderNumber,
     "Order Status": order.financial_status || 'pending',
-    "Order Date": moment(order.created_at).format('YYYY-MM-DD HH:mm'),
+    "Order Date": orderDate,
     "Customer Note": order.note || '',
     "First Name (Billing)": order.billing_address?.first_name || '',
     "Last Name (Billing)": order.billing_address?.last_name || '',
@@ -67,18 +71,18 @@ function transformOrderToWooFormat(order, lineItem) {
     "Address 1&2 (Billing)": `${order.billing_address?.address1 || ''} ${order.billing_address?.address2 || ''}`.trim(),
     "City (Billing)": order.billing_address?.city || '',
     "State Code (Billing)": order.billing_address?.province_code || '',
-    "Postcode (Billing)": order.billing_address?.zip || '',
+    "Postcode (Billing)": (order.billing_address?.zip || '').replace(/\s/g, ''),
     "Country Code (Billing)": order.billing_address?.country_code || '',
     "Email (Shipping)": order.shipping_address?.email || order.email || '',
-    "Paid Date": order.processed_at ? moment(order.processed_at).format('YYYY-MM-DD HH:mm') : '',
-    "Phone (Shipping)": order.shipping_address?.phone || order.phone || '',
-    "Phone (Billing)": order.billing_address?.phone || order.phone || '',
+    "Paid Date": paidDate,
+    "Phone (Shipping)": (order.shipping_address?.phone || order.phone || '').replace(/\s/g, ''),
+    "Phone (Billing)": (order.billing_address?.phone || order.phone || '').replace(/\s/g, ''),
     "First Name (Shipping)": order.shipping_address?.first_name || order.billing_address?.first_name || '',
     "Last Name (Shipping)": order.shipping_address?.last_name || order.billing_address?.last_name || '',
     "Address 1&2 (Shipping)": `${order.shipping_address?.address1 || order.billing_address?.address1 || ''} ${order.shipping_address?.address2 || order.billing_address?.address2 || ''}`.trim(),
     "City (Shipping)": order.shipping_address?.city || order.billing_address?.city || '',
     "State Code (Shipping)": order.shipping_address?.province_code || order.billing_address?.province_code || '',
-    "Postcode (Shipping)": order.shipping_address?.zip || order.billing_address?.zip || '',
+    "Postcode (Shipping)": (order.shipping_address?.zip || order.billing_address?.zip || '').replace(/\s/g, ''),
     "Country Code (Shipping)": order.shipping_address?.country_code || order.billing_address?.country_code || '',
     "Payment Method Title": order.payment_gateway_names?.[0] || 'Unknown',
     "Cart Discount Amount": order.total_discounts || '0',
@@ -93,10 +97,10 @@ function transformOrderToWooFormat(order, lineItem) {
     "Item Name": lineItem.name || lineItem.title,
     "Quantity (- Refund)": lineItem.quantity || 1,
     "Item Cost": lineItem.price || '0',
-    "Coupon Code": order.discount_codes?.map(dc => dc.code).join(', ') || '',
+    "Coupon Code": order.discount_codes?.map(dc => dc.code.replace(/\s/g, '')).join(',') || '',
     "Discount Amount": lineItem.total_discount || '0',
     "Discount Amount Tax": '0',
-    "City Code": '',
+    "City Code": (order.billing_address?.city || '').replace(/\s/g, ''),
     "Carrier Code": ''
   };
 }
