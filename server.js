@@ -176,7 +176,7 @@ app.get('/api/orders', async (req, res) => {
     
     console.log('Dashboard API - Request params:', { created_at_min, created_at_max, status });
     
-    let queryParams = 'limit=250&status=any&financial_status=any';
+    let queryParams = 'limit=250&status=any&financial_status=any&fulfillment_status=any';
     if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
     if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
     
@@ -206,7 +206,7 @@ app.post('/export-orders', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.body;
     
-    let queryParams = 'limit=250&status=any&financial_status=any';
+    let queryParams = 'limit=250&status=any&financial_status=any&fulfillment_status=any';
     if (startDate) {
       const startISO = new Date(startDate).toISOString();
       queryParams += `&created_at_min=${startISO}`;
@@ -319,7 +319,7 @@ app.post('/export-orders-excel', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.body;
     
-    let queryParams = 'limit=250&status=any&financial_status=any';
+    let queryParams = 'limit=250&status=any&financial_status=any&fulfillment_status=any';
     if (startDate) {
       const startISO = new Date(startDate).toISOString();
       queryParams += `&created_at_min=${startISO}`;
