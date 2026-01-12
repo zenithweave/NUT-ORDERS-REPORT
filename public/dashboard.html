@@ -791,11 +791,15 @@
                 const orderNumber = document.getElementById('orderNumber').value;
                 const paymentMethod = document.getElementById('paymentMethod').value;
                 
+                console.log('Dashboard - Date filters:', { dateFrom, dateTo });
+                
                 const params = new URLSearchParams({
                     created_at_min: dateFrom ? new Date(dateFrom).toISOString() : '',
                     created_at_max: dateTo ? new Date(dateTo + 'T23:59:59').toISOString() : '',
                     status: 'any'
                 });
+                
+                console.log('Dashboard - API URL:', `${API_BASE_URL}/api/orders?${params}`);
                 
                 const response = await fetch(`${API_BASE_URL}/api/orders?${params}`);
                 
@@ -804,24 +808,38 @@
                 }
                 
                 const data = await response.json();
+                console.log(`Dashboard - Received ${data.orders?.length || 0} orders from API`);
                 ordersData = data.orders || [];
+                
+                // Log order timestamps for debugging
+                if (ordersData.length > 0) {
+                    console.log('Dashboard - First 5 order timestamps:');
+                    ordersData.slice(0, 5).forEach(order => {
+                        console.log(`  ${order.name}: ${order.created_at} (${new Date(order.created_at).toLocaleString()})`);
+                    });
+                }
                 
                 // Filter by order number if specified
                 if (orderNumber) {
+                    const beforeFilter = ordersData.length;
                     ordersData = ordersData.filter(order => 
                         order.name.toLowerCase().includes(orderNumber.toLowerCase()) ||
                         order.order_number?.toString().includes(orderNumber)
                     );
+                    console.log(`Dashboard - Order number filter: ${beforeFilter} -> ${ordersData.length}`);
                 }
                 
                 // Filter by payment method if specified
                 if (paymentMethod) {
+                    const beforeFilter = ordersData.length;
                     ordersData = ordersData.filter(order => {
                         const gateway = order.payment_gateway_names?.[0] || '';
                         return gateway.toLowerCase().includes(paymentMethod);
                     });
+                    console.log(`Dashboard - Payment method filter: ${beforeFilter} -> ${ordersData.length}`);
                 }
                 
+                console.log(`Dashboard - Final order count: ${ordersData.length}`);
                 displayOrders(ordersData);
                 
             } catch (error) {

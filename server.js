@@ -174,12 +174,18 @@ app.get('/api/orders', async (req, res) => {
   try {
     const { created_at_min, created_at_max, status } = req.query;
     
+    console.log('Dashboard API - Request params:', { created_at_min, created_at_max, status });
+    
     let queryParams = 'limit=250&status=any&financial_status=any';
     if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
     if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
     
+    console.log('Dashboard API - Query params:', queryParams);
+    
     // Use pagination to fetch ALL orders
     const orders = await fetchAllOrders(queryParams);
+    
+    console.log(`Dashboard API - Returning ${orders.length} orders`);
     
     res.json({
       success: true,
