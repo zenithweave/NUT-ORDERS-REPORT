@@ -66,11 +66,15 @@ async function fetchAllOrders(queryParams) {
   try {
     while (hasNextPage && pageCount < MAX_PAGES) {
       pageCount++;
-      let endpoint = `orders.json?${queryParams}`;
+      let endpoint;
       
-      // Add pagination cursor if we have one
+      // IMPORTANT: When using page_info, we cannot include other query params
+      // The page_info cursor already contains all the filter information
       if (pageInfo) {
-        endpoint += `&page_info=${pageInfo}`;
+        endpoint = `orders.json?limit=250&page_info=${pageInfo}`;
+      } else {
+        // First request uses the full query params
+        endpoint = `orders.json?${queryParams}`;
       }
       
       const url = `https://${SHOPIFY_SHOP_NAME}/admin/api/2024-01/${endpoint}`;
