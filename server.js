@@ -54,6 +54,70 @@ async function fetchShopifyData(endpoint) {
   }
 }
 
+// Helper function to fetch ALL orders with pagination
+// Note: Shopify API maximum is 250 orders per request
+async function fetchAllOrders(queryParams) {
+  let allOrders = [];
+  let pageInfo = null;
+  let hasNextPage = true;
+  let pageCount = 0;
+  const MAX_PAGES = 100; // Safety limit to prevent infinite loops
+  
+  try {
+    while (hasNextPage && pageCount < MAX_PAGES) {
+      pageCount++;
+      let endpoint = `orders.json?${queryParams}`;
+      
+      // Add pagination cursor if we have one
+      if (pageInfo) {
+        endpoint += `&page_info=${pageInfo}`;
+      }
+      
+      const url = `https://${SHOPIFY_SHOP_NAME}/admin/api/2024-01/${endpoint}`;
+      const response = await axios.get(url, {
+        headers: {
+          'X-Shopify-Access-Token': SHOPIFY_ADMIN_ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const orders = response.data.orders || [];
+      allOrders = allOrders.concat(orders);
+      
+      console.log(`Page ${pageCount}: Fetched ${orders.length} orders, total so far: ${allOrders.length}`);
+      
+      // Check for pagination link in response headers
+      const linkHeader = response.headers.link;
+      if (linkHeader && linkHeader.includes('rel="next"')) {
+        // Extract page_info from the next link
+        const nextLinkMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>; rel="next"/);
+        if (nextLinkMatch && nextLinkMatch[1]) {
+          pageInfo = nextLinkMatch[1];
+        } else {
+          hasNextPage = false;
+        }
+      } else {
+        hasNextPage = false;
+      }
+      
+      // Safety check: if we got less than 250 orders, we're done
+      if (orders.length < 250) {
+        hasNextPage = false;
+      }
+    }
+    
+    if (pageCount >= MAX_PAGES) {
+      console.warn(`⚠️ Reached maximum page limit (${MAX_PAGES}). Total orders: ${allOrders.length}`);
+    }
+    
+    console.log(`✅ Total orders fetched: ${allOrders.length} across ${pageCount} page(s)`);
+    return allOrders;
+  } catch (error) {
+    console.error('Error fetching orders with pagination:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
 // Transform Shopify order data to WooCommerce CSV format
 function transformOrderToWooFormat(order, lineItem) {
   const orderNumber = (order.name || order.id).toString().replace('#', '');
@@ -114,12 +178,13 @@ app.get('/api/orders', async (req, res) => {
     if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
     if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
     
-    const data = await fetchShopifyData(`orders.json?${queryParams}`);
+    // Use pagination to fetch ALL orders
+    const orders = await fetchAllOrders(queryParams);
     
     res.json({
       success: true,
-      count: data.orders?.length || 0,
-      orders: data.orders || []
+      count: orders.length,
+      orders: orders
     });
   } catch (error) {
     console.error('API error:', error);
@@ -135,13 +200,26 @@ app.post('/export-orders', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.body;
     
-    let queryParams = 'limit=250';
-    if (startDate) queryParams += `&created_at_min=${startDate}`;
-    if (endDate) queryParams += `&created_at_max=${endDate}`;
-    if (status) queryParams += `&status=${status}`;
+    let queryParams = 'limit=250&status=any&financial_status=any';
+    if (startDate) {
+      const startISO = new Date(startDate).toISOString();
+      queryParams += `&created_at_min=${startISO}`;
+    }
+    if (endDate) {
+      // Set to end of day
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      const endISO = endDateObj.toISOString();
+      queryParams += `&created_at_max=${endISO}`;
+    }
+    if (status && status !== 'any') queryParams += `&status=${status}`;
     
-    const ordersData = await fetchShopifyData(`orders.json?${queryParams}`);
-    const orders = ordersData.orders;
+    console.log('CSV Export - Query params:', queryParams);
+    
+    // Use pagination to fetch ALL orders
+    const orders = await fetchAllOrders(queryParams);
+    
+    console.log(`CSV Export - Found ${orders.length} orders`);
     
     if (!orders || orders.length === 0) {
       return res.status(404).json({ error: 'No orders found' });
@@ -149,10 +227,18 @@ app.post('/export-orders', async (req, res) => {
     
     const csvData = [];
     for (const order of orders) {
+      // Skip orders without line items
+      if (!order.line_items || order.line_items.length === 0) {
+        console.log(`CSV Export - Skipping order ${order.name} - no line items`);
+        continue;
+      }
+      
       for (const lineItem of order.line_items) {
         csvData.push(transformOrderToWooFormat(order, lineItem));
       }
     }
+    
+    console.log(`CSV Export - Generated ${csvData.length} rows from ${orders.length} orders`);
     
     const csvWriter = createObjectCsvWriter({
       path: 'orders_export.csv',
@@ -227,13 +313,31 @@ app.post('/export-orders-excel', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.body;
     
-    let queryParams = 'limit=250';
-    if (startDate) queryParams += `&created_at_min=${startDate}`;
-    if (endDate) queryParams += `&created_at_max=${endDate}`;
-    if (status) queryParams += `&status=${status}`;
+    let queryParams = 'limit=250&status=any&financial_status=any';
+    if (startDate) {
+      const startISO = new Date(startDate).toISOString();
+      queryParams += `&created_at_min=${startISO}`;
+    }
+    if (endDate) {
+      // Set to end of day
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      const endISO = endDateObj.toISOString();
+      queryParams += `&created_at_max=${endISO}`;
+    }
+    if (status && status !== 'any') queryParams += `&status=${status}`;
     
-    const data = await fetchShopifyData(`orders.json?${queryParams}`);
-    const orders = data.orders || [];
+    console.log('Excel Export - Query params:', queryParams);
+    
+    // Use pagination to fetch ALL orders
+    const orders = await fetchAllOrders(queryParams);
+    
+    console.log(`Excel Export - Found ${orders.length} orders`);
+    
+    if (!orders || orders.length === 0) {
+      console.log('Excel Export - No orders found, returning 404');
+      return res.status(404).json({ error: 'No orders found' });
+    }
     
     // Create workbook and worksheet
     const workbook = new ExcelJS.Workbook();
@@ -293,7 +397,14 @@ app.post('/export-orders-excel', async (req, res) => {
     };
     
     // Add data rows
+    let rowCount = 0;
     for (const order of orders) {
+      // Skip orders without line items
+      if (!order.line_items || order.line_items.length === 0) {
+        console.log(`Excel Export - Skipping order ${order.name} - no line items`);
+        continue;
+      }
+      
       for (const lineItem of order.line_items) {
         const rowData = transformOrderToWooFormat(order, lineItem);
         worksheet.addRow({
@@ -339,8 +450,11 @@ app.post('/export-orders-excel', async (req, res) => {
           cityCode: rowData['City Code'],
           carrierCode: rowData['Carrier Code']
         });
+        rowCount++;
       }
     }
+    
+    console.log(`Excel Export - Generated ${rowCount} rows from ${orders.length} orders`);
     
     // Generate Excel file
     const buffer = await workbook.xlsx.writeBuffer();
