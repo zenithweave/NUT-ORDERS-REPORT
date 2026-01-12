@@ -210,9 +210,16 @@ app.get('/api/orders', async (req, res) => {
     
     // Fetch ALL orders - explicitly request all statuses
     // status=any includes open, closed, cancelled, and archived orders
-    // order=created_at asc ensures we get all orders chronologically
-    let queryParams = 'limit=250&status=any&order=created_at asc';
-    if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
+    // order=created_at desc shows newest first (better UX)
+    let queryParams = 'limit=250&status=any&order=created_at desc';
+    
+    // Adjust date range for Egypt timezone (UTC+2)
+    // Subtract 2 hours from start date to catch orders created early in the day
+    if (created_at_min) {
+      const adjustedMin = new Date(created_at_min);
+      adjustedMin.setHours(adjustedMin.getHours() - 2);
+      queryParams += `&created_at_min=${adjustedMin.toISOString()}`;
+    }
     if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
     
     console.log('Dashboard API - Query params:', queryParams);
@@ -243,18 +250,20 @@ app.post('/export-orders', async (req, res) => {
     
     // Fetch ALL orders - explicitly request all statuses
     // status=any includes open, closed, cancelled, and archived orders
-    // order=created_at asc ensures we get all orders chronologically
-    let queryParams = 'limit=250&status=any&order=created_at asc';
+    // order=created_at desc shows newest first
+    let queryParams = 'limit=250&status=any&order=created_at desc';
+    
     if (startDate) {
-      const startISO = new Date(startDate).toISOString();
-      queryParams += `&created_at_min=${startISO}`;
+      // Adjust for Egypt timezone (UTC+2) - subtract 2 hours to catch early orders
+      const startDateObj = new Date(startDate);
+      startDateObj.setHours(startDateObj.getHours() - 2);
+      queryParams += `&created_at_min=${startDateObj.toISOString()}`;
     }
     if (endDate) {
       // Set to end of day
       const endDateObj = new Date(endDate);
       endDateObj.setHours(23, 59, 59, 999);
-      const endISO = endDateObj.toISOString();
-      queryParams += `&created_at_max=${endISO}`;
+      queryParams += `&created_at_max=${endDateObj.toISOString()}`;
     }
     if (status && status !== 'any') queryParams += `&status=${status}`;
     
@@ -359,18 +368,20 @@ app.post('/export-orders-excel', async (req, res) => {
     
     // Fetch ALL orders - explicitly request all statuses
     // status=any includes open, closed, cancelled, and archived orders
-    // order=created_at asc ensures we get all orders chronologically
-    let queryParams = 'limit=250&status=any&order=created_at asc';
+    // order=created_at desc shows newest first
+    let queryParams = 'limit=250&status=any&order=created_at desc';
+    
     if (startDate) {
-      const startISO = new Date(startDate).toISOString();
-      queryParams += `&created_at_min=${startISO}`;
+      // Adjust for Egypt timezone (UTC+2) - subtract 2 hours to catch early orders
+      const startDateObj = new Date(startDate);
+      startDateObj.setHours(startDateObj.getHours() - 2);
+      queryParams += `&created_at_min=${startDateObj.toISOString()}`;
     }
     if (endDate) {
       // Set to end of day
       const endDateObj = new Date(endDate);
       endDateObj.setHours(23, 59, 59, 999);
-      const endISO = endDateObj.toISOString();
-      queryParams += `&created_at_max=${endISO}`;
+      queryParams += `&created_at_max=${endDateObj.toISOString()}`;
     }
     if (status && status !== 'any') queryParams += `&status=${status}`;
     
