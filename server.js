@@ -91,12 +91,14 @@ async function fetchAllOrders(queryParams) {
       
       console.log(`Page ${pageCount}: Fetched ${orders.length} orders, total so far: ${allOrders.length}`);
       
-      // Log fulfillment status of orders for debugging
+      // Log detailed order information for debugging
       if (orders.length > 0 && pageCount === 1) {
         console.log('First page order details:');
         orders.slice(0, 5).forEach(order => {
-          console.log(`  ${order.name}: fulfillment=${order.fulfillment_status}, financial=${order.financial_status}, created=${order.created_at}`);
+          console.log(`  ${order.name}: fulfillment=${order.fulfillment_status}, financial=${order.financial_status}, status=${order.status}, created=${order.created_at}`);
         });
+        console.log(`Query used: ${endpoint}`);
+        console.log(`Total orders in response: ${orders.length}`);
       }
       
       // Check for pagination link in response headers
@@ -204,8 +206,9 @@ app.get('/api/orders', async (req, res) => {
     
     console.log('Dashboard API - Request params:', { created_at_min, created_at_max, status });
     
-    // Fetch ALL orders - no status filtering to ensure fulfilled orders are included
-    let queryParams = 'limit=250';
+    // Fetch ALL orders - explicitly request all statuses
+    // status=any includes open, closed, cancelled, and archived orders
+    let queryParams = 'limit=250&status=any';
     if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
     if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
     
@@ -235,8 +238,9 @@ app.post('/export-orders', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.body;
     
-    // Fetch ALL orders - no status filtering to ensure fulfilled orders are included
-    let queryParams = 'limit=250';
+    // Fetch ALL orders - explicitly request all statuses
+    // status=any includes open, closed, cancelled, and archived orders
+    let queryParams = 'limit=250&status=any';
     if (startDate) {
       const startISO = new Date(startDate).toISOString();
       queryParams += `&created_at_min=${startISO}`;
@@ -349,8 +353,9 @@ app.post('/export-orders-excel', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.body;
     
-    // Fetch ALL orders - no status filtering to ensure fulfilled orders are included
-    let queryParams = 'limit=250';
+    // Fetch ALL orders - explicitly request all statuses
+    // status=any includes open, closed, cancelled, and archived orders
+    let queryParams = 'limit=250&status=any';
     if (startDate) {
       const startISO = new Date(startDate).toISOString();
       queryParams += `&created_at_min=${startISO}`;
