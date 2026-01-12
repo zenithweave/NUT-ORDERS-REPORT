@@ -210,7 +210,8 @@ app.get('/api/orders', async (req, res) => {
     
     // Fetch ALL orders - explicitly request all statuses
     // status=any includes open, closed, cancelled, and archived orders
-    let queryParams = 'limit=250&status=any';
+    // order=created_at asc ensures we get all orders chronologically
+    let queryParams = 'limit=250&status=any&order=created_at asc';
     if (created_at_min) queryParams += `&created_at_min=${created_at_min}`;
     if (created_at_max) queryParams += `&created_at_max=${created_at_max}`;
     
@@ -242,7 +243,8 @@ app.post('/export-orders', async (req, res) => {
     
     // Fetch ALL orders - explicitly request all statuses
     // status=any includes open, closed, cancelled, and archived orders
-    let queryParams = 'limit=250&status=any';
+    // order=created_at asc ensures we get all orders chronologically
+    let queryParams = 'limit=250&status=any&order=created_at asc';
     if (startDate) {
       const startISO = new Date(startDate).toISOString();
       queryParams += `&created_at_min=${startISO}`;
@@ -357,7 +359,8 @@ app.post('/export-orders-excel', async (req, res) => {
     
     // Fetch ALL orders - explicitly request all statuses
     // status=any includes open, closed, cancelled, and archived orders
-    let queryParams = 'limit=250&status=any';
+    // order=created_at asc ensures we get all orders chronologically
+    let queryParams = 'limit=250&status=any&order=created_at asc';
     if (startDate) {
       const startISO = new Date(startDate).toISOString();
       queryParams += `&created_at_min=${startISO}`;
