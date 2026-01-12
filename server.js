@@ -78,7 +78,8 @@ async function fetchAllOrders(queryParams) {
         headers: {
           'X-Shopify-Access-Token': SHOPIFY_ADMIN_ACCESS_TOKEN,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 60000 // 60 second timeout for large requests
       });
       
       const orders = response.data.orders || [];
@@ -112,6 +113,11 @@ async function fetchAllOrders(queryParams) {
       if (orders.length < 250) {
         hasNextPage = false;
       }
+      
+      // Add small delay between requests to avoid rate limiting
+      if (hasNextPage && pageCount < MAX_PAGES) {
+        await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+      }
     }
     
     if (pageCount >= MAX_PAGES) {
@@ -122,7 +128,17 @@ async function fetchAllOrders(queryParams) {
     return allOrders;
   } catch (error) {
     console.error('Error fetching orders with pagination:', error.response?.data || error.message);
-    throw error;
+    
+    // Provide more specific error messages
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('Request timeout - try selecting a smaller date range');
+    } else if (error.response?.status === 429) {
+      throw new Error('Shopify API rate limit exceeded - please wait a moment and try again');
+    } else if (error.response?.status === 401) {
+      throw new Error('Authentication failed - check your Shopify credentials');
+    } else {
+      throw new Error(error.response?.data?.errors || error.message || 'Failed to fetch orders from Shopify');
+    }
   }
 }
 
