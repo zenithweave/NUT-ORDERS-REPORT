@@ -99,6 +99,7 @@ async function fetchAllOrders(queryParams) {
         });
         console.log(`Query used: ${endpoint}`);
         console.log(`Total orders in response: ${orders.length}`);
+        console.log(`All order numbers on this page: ${orders.map(o => o.name).join(', ')}`);
       }
       
       // Check for pagination link in response headers
@@ -151,8 +152,9 @@ async function fetchAllOrders(queryParams) {
 // Transform Shopify order data to WooCommerce CSV format
 function transformOrderToWooFormat(order, lineItem) {
   const orderNumber = (order.name || order.id).toString().replace('#', '');
-  const orderDate = moment(order.created_at).format('YYYY-MM-DDHH:mm');
-  const paidDate = order.processed_at ? moment(order.processed_at).format('YYYY-MM-DDHH:mm') : '';
+  // Use Egypt timezone (UTC+2) for correct local time display
+  const orderDate = moment(order.created_at).utcOffset('+02:00').format('YYYY-MM-DD HH:mm');
+  const paidDate = order.processed_at ? moment(order.processed_at).utcOffset('+02:00').format('YYYY-MM-DD HH:mm') : '';
   
   return {
     "Order Number": orderNumber,
